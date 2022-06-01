@@ -134,6 +134,9 @@ export class InstallFromUrlDialogComponent implements OnDestroy {
       }
 
       this.addon = searchByUrlResult.searchResult;
+      if(!this.addon){
+        throw new Error("Addon not found")
+      }
       this.hasThumbnail = !!this.addon.thumbnailUrl;
       this.thumbnailLetter = this.addon.name.charAt(0).toUpperCase();
 

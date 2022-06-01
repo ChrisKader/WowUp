@@ -622,8 +622,20 @@ export function initializeIpcHandlers(window: BrowserWindow): void {
         await new Promise((resolve, reject) => {
           let size = 0;
           let percentMod = -1;
+          console.dir(downloadUrl)
+          if(downloadUrl.protocol == 'file:'){
+            const filePath = path.resolve(downloadUrl.pathname.substring(1))
+            console.log(filePath)
+            const fileData = fs.readFileSync(filePath)
+            if(writer.write(fileData)){
+              return resolve(undefined)
+            } else {
+              return reject(new Error(`File not copied`))
+            }
+          }
 
           const req = net.request({
+
             url,
             redirect: "manual",
           });

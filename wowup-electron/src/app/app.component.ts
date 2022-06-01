@@ -89,6 +89,47 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  @HostListener("window:keydown", ["$event"])
+  public async handleKeydownEvent(event: KeyboardEvent): Promise<void> {
+    if(document.activeElement == document.querySelector('body')){
+      if(event.ctrlKey && event.key.toLowerCase() == 'v'){
+        await navigator.clipboard.readText().then(async clipText =>{
+          try {
+            (new URL(clipText));
+            await this.openInstallFromUrlDialogAndShowImport(clipText, true);
+          } catch (err) {
+            console.error(`Invalid url: ${clipText}`);
+            this._snackbarService.showErrorSnackbar(`${clipText} is not a valid URL`)
+          }
+        })
+      }
+    }
+  }
+
+  @HostListener("window:drop",["$event"])
+  public async handleDropEvent(event: InputEvent): Promise<void> {
+    console.log(event)
+    if(document.activeElement == document.querySelector('body')){
+      if(event.dataTransfer && event.dataTransfer.items){
+        const file = event.dataTransfer.items[0].getAsFile();
+        if(file){
+          if(file.path.endsWith('.zip')){
+            try {
+              const fileUrl = new URL(file.path)
+              await this.openInstallFromUrlDialogAndShowImport(fileUrl.toString(), true);
+            } catch(e) {
+              console.error(`Invalid file: ${file.path}`);
+              this._snackbarService.showErrorSnackbar(`${file.name} is not a ZIP file.`)
+            }
+          } else {
+            console.error(`Invalid file: ${file.path}`);
+            this._snackbarService.showErrorSnackbar(`${file.name} is not a ZIP file.`)
+          }
+        }
+      }
+    }
+  }
+
   public quitEnabled?: boolean;
   public showPreLoad$ = new BehaviorSubject<boolean>(true);
 
@@ -350,6 +391,18 @@ export class AppComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const dialogRef = this._dialog.open(InstallFromUrlDialogComponent);
     dialogRef.componentInstance.query = path;
+  }
+
+  private async openInstallFromUrlDialogAndShowImport(path?: string, showImport?: boolean) {
+    if (!path) {
+      return;
+    }
+
+    const dialogRef = this._dialog.open(InstallFromUrlDialogComponent);
+    dialogRef.componentInstance.query = path;
+    if(showImport){
+      await dialogRef.componentInstance.onImportUrl()
+    }
   }
 
   private async initializeAutoUpdate() {
